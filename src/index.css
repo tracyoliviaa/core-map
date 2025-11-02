@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --font-primary: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --color-text-light: #213547;
+  --color-text-dark: rgba(255, 255, 255, 0.87);
+  --color-bg-light: #ffffff;
+  --color-bg-dark: #242424;
+  --color-link: #646cff;
+  --color-link-hover: #535bf2;
+  /* Add more custom properties as needed */
+}
+
+/* Your global styles like :root, a, button can remain here */
+:root {
+  font-family: var(--font-primary);
+  color-scheme: light dark;
+  color: var(--color-text-dark);
+  background-color: var(--color-bg-dark);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    color: var(--color-text-light);
+    background-color: var(--color-bg-light);
+  }
+}
