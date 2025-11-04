@@ -1,4 +1,3 @@
-cat > src/context/AppContext.jsx << 'EOF'
 import { createContext, useState, useEffect } from 'react';
 import { INITIAL_AREAS } from '../data/coreAreas';
 
@@ -92,4 +91,3 @@ export const AppProvider = ({ children }) => {
     </AppContext.Provider>
   );
 };
-EOF
