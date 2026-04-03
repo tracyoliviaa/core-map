@@ -1,5 +1,5 @@
 export const ProgressBar = ({ completed, total, color }) => {
-  const percentage = Math.round((completed / total) * 100);
+  const percentage = total === 0 ? 0 : Math.round((completed / total) * 100);
   
   return (
     <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">

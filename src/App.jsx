@@ -1,11 +1,10 @@
-import { AppProvider } from "./context/AppProvider";
+import { AppProvider } from './context/AppContext'
+import { Dashboard } from './components/Dashboard'
 
-function App() {
+export default function App() {
   return (
     <AppProvider>
-      {/* your app content */}
+      <Dashboard />
     </AppProvider>
-  );
+  )
 }
-
-export default App;
