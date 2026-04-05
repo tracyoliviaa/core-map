@@ -18,13 +18,15 @@ export const AppProvider = ({ children }) => {
     return localStorage.getItem('lastVisit') || new Date().toDateString();
   });
 
+  // API Load mit Fallback
   useEffect(() => {
-    try {
-      localStorage.setItem('coreMapData', JSON.stringify(areas));
-    } catch (error) {
-      console.error('Fehler beim Speichern:', error);
-    }
-  }, [areas]);
+    fetch('http://localhost:3001/areas')
+      .then(res => res.json())
+      .then(data => {
+        if (data.length > 0) setAreas(data);
+      })
+      .catch(() => console.log('API nicht erreichbar, nutze localStorage'));
+  }, []);
 
   useEffect(() => {
     const today = new Date().toDateString();
@@ -36,25 +38,35 @@ export const AppProvider = ({ children }) => {
   }, [lastVisit]);
 
   const resetDailyTasks = () => {
-    setAreas(prevAreas => 
+    setAreas(prevAreas =>
       prevAreas.map(area => ({
         ...area,
-        tasks: area.tasks.map(task => ({ 
-          ...task, 
-          completed: false 
-        }))
+        tasks: area.tasks.map(task => ({
+          ...task,
+          completed: false,
+        })),
       }))
     );
   };
 
-  const toggleTask = (areaId, taskId) => {
-    setAreas(prevAreas => 
+  // 🆕 API ToggleTask mit lokal Fallback
+  const toggleTask = async (areaId, taskId) => {
+    try {
+      await fetch(`http://localhost:3001/areas/${areaId}/tasks/${taskId}`, {
+        method: 'PATCH'
+      });
+    } catch (error) {
+      console.log('API Toggle fehlgeschlagen, lokal updaten');
+    }
+    
+    // Immer lokal updaten (Points/Streak)
+    setAreas(prevAreas =>
       prevAreas.map(area => {
         if (area.id !== areaId) return area;
 
-        const updatedTasks = area.tasks.map(task => 
-          task.id === taskId 
-            ? { ...task, completed: !task.completed } 
+        const updatedTasks = area.tasks.map(task =>
+          task.id === taskId
+            ? { ...task, completed: !task.completed }
             : task
         );
 
@@ -66,11 +78,81 @@ export const AppProvider = ({ children }) => {
           ...area,
           tasks: updatedTasks,
           points: area.points + (allCompleted && !wasAllCompleted ? 10 : 0),
-          streak: allCompleted && !wasAllCompleted ? area.streak + 1 : area.streak
+          streak: allCompleted && !wasAllCompleted ? area.streak + 1 : area.streak,
         };
       })
     );
   };
+
+  // 🆕 API DeleteTask mit lokal Fallback
+  const deleteTask = async (areaId, taskId) => {
+    try {
+      await fetch(`http://localhost:3001/areas/${areaId}/tasks/${taskId}`, {
+        method: 'DELETE'
+      });
+    } catch (error) {
+      console.log('API Delete fehlgeschlagen, lokal updaten');
+    }
+    
+    setAreas(prevAreas =>
+      prevAreas.map(area =>
+        area.id !== areaId ? area : {
+          ...area,
+          tasks: area.tasks.filter(t => t.id !== taskId),
+        }
+      )
+    );
+  };
+
+  // 🆕 API AddTask mit lokal Fallback
+  const addTask = async (areaId, taskText) => {
+    try {
+      const res = await fetch(`http://localhost:3001/areas/${areaId}/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: taskText })
+      });
+      const newTask = await res.json();
+      // API Antwort nutzen
+      setAreas(prevAreas =>
+        prevAreas.map(area =>
+          area.id !== areaId ? area : {
+            ...area,
+            tasks: [...area.tasks, newTask]
+          }
+        )
+      );
+    } catch (error) {
+      console.log('API Add fehlgeschlagen, lokal erstellen');
+      // Lokal Fallback
+      setAreas(prevAreas =>
+        prevAreas.map(area =>
+          area.id !== areaId ? area : {
+            ...area,
+            tasks: [
+              ...area.tasks,
+              {
+                id: `${areaId}-${Date.now()}`,
+                text: taskText,
+                completed: false,
+              },
+            ],
+          }
+        )
+      );
+    }
+  };
+
+  const [darkMode, setDarkMode] = useState(() => {
+    return localStorage.getItem('darkMode') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('darkMode', darkMode);
+    document.documentElement.classList.toggle('dark', darkMode);
+  }, [darkMode]);
+
+  const toggleDarkMode = () => setDarkMode(prev => !prev);
 
   const resetProgress = () => {
     setAreas(INITIAL_AREAS);
@@ -79,10 +161,37 @@ export const AppProvider = ({ children }) => {
     setLastVisit(new Date().toDateString());
   };
 
+  const addArea = (name, emoji, description, color) => {
+    const id = name.toLowerCase().replace(/\s+/g, '-');
+    setAreas(prev => [
+      ...prev,
+      {
+        id,
+        name,
+        emoji,
+        description,
+        color,
+        tasks: [],
+        points: 0,
+        streak: 0,
+      },
+    ]);
+  };
+
+  // LocalStorage Sync
+  useEffect(() => {
+    localStorage.setItem('coreMapData', JSON.stringify(areas));
+  }, [areas]);
+
   const value = {
     areas,
-    toggleTask,
-    resetProgress
+    toggleTask,     // 🆕 API + lokal
+    resetProgress,
+    deleteTask,     // 🆕 API + lokal  
+    addTask,        // 🆕 API + lokal
+    darkMode,
+    toggleDarkMode,
+    addArea,
   };
 
   return (
@@ -90,4 +199,4 @@ export const AppProvider = ({ children }) => {
       {children}
     </AppContext.Provider>
   );
-};
+};cd 

@@ -1,9 +1,4 @@
-/* stylelint-disable at-rule-no-unknown */
-/* Tell stylelint that Tailwind's @-rules are valid */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-/* stylelint-enable at-rule-no-unknown */
+@import "tailwindcss";
 
 ::-webkit-scrollbar {
   width: 8px;
